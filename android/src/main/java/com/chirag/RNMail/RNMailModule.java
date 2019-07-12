@@ -53,8 +53,21 @@ public class RNMailModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void mail(ReadableMap options, Callback callback) {
-    Intent i = new Intent(Intent.ACTION_SENDTO);
-    i.setData(Uri.parse("mailto:"));
+    Boolean legacy_attach = false;
+    if (options.hasKey("legacy_attach")) {
+      legacy_attach = options.getBoolean("legacy_attach");
+    }
+
+    Intent i, is;
+    if (legacy_attach) {
+      is = new Intent(Intent.ACTION_SENDTO);
+      is.setData(Uri.parse("mailto:"));
+      i = new Intent(Intent.ACTION_SEND);
+      i.setSelector( is );
+    } else {
+      i = new Intent(Intent.ACTION_SENDTO);
+      i.setData(Uri.parse("mailto:"));
+    }
 
     if (options.hasKey("subject") && !options.isNull("subject")) {
       i.putExtra(Intent.EXTRA_SUBJECT, options.getString("subject"));
@@ -107,7 +120,7 @@ public class RNMailModule extends ReactContextBaseJavaModule {
       try {
         reactContext.startActivity(i);
       } catch (Exception ex) {
-        callback.invoke("error");
+        callback.invoke(ex.toString());
       }
     } else {
       Intent chooser = Intent.createChooser(i, "Send Mail");
@@ -116,7 +129,7 @@ public class RNMailModule extends ReactContextBaseJavaModule {
       try {
         reactContext.startActivity(chooser);
       } catch (Exception ex) {
-        callback.invoke("error");
+        callback.invoke(ex.toString());
       }
     }
   }
